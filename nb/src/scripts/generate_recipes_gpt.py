@@ -1,76 +1,98 @@
-import os
-import json
-import time
-import random
+#!/usr/bin/env python
+"""
+   Add vegan / keto flags to a cleaned ingredient list via GPT-3.5
+
+   $ python tag_ingredients.py --src clean_ingredients.csv \
+                                --out ingredients_labeled.csv \
+                                --batch-size 50 --debug
+"""
+from __future__ import annotations
+import argparse, csv, json, os, sys, time
 from pathlib import Path
 
-import openai
+import backoff       # pip install backoff
+import openai        # pip install openai
+import pandas as pd
 
-# Load your API key from environment variable
-openai.api_key = os.getenv("OPENAI_API_KEY")
+MODEL = "gpt-3.5-turbo"
+SYSTEM_MSG = (
+    "You are a food‐labeling assistant.\n"
+    "For every item you receive:\n"
+    "  • If it's a valid ingredient word/phrase, keep it as-is.\n"
+    "  • Otherwise, replace it with the closest real ingredient word.\n"
+    "Return JSON with keys: ingredient (string), isVegan (true/false), isKeto (true/false).\n"
+    "Assume keto = ≤ 4 g net carbs per 100 g and vegan = contains no animal products.\n"
+)
 
-# How many recipes to generate per label
-RECIPES_PER_LABEL = 300
-LABELS = ["vegan", "keto", "regular"]
-OUT_PATH = Path("gpt_recipes.json")
+# --------------------------------------------------------------------- #
+def gpt_prompt(batch: list[str]) -> str:
+    bullet_list = "\n".join(f"- {x}" for x in batch)
+    return (
+        f"Label every line below.\n"
+        f"Respond ONLY with a JSON array, one object per line *in the same order*.\n\n"
+        f"{bullet_list}"
+    )
 
-
-def generate_prompt(label: str) -> str:
-    return f"""Create a unique {label} recipe.
-Return a JSON with:
-- title: short name of the dish
-- ingredients: a list of 5-15 ingredients (only the raw ingredient phrases, no steps or instructions)
-Only output the JSON.
-"""
-
-
-def call_gpt(label: str) -> dict | None:
+@backoff.on_exception(backoff.expo, openai.error.RateLimitError, max_time=60)
+def call_gpt(batch: list[str]) -> list[dict]:
+    """Ask GPT and return a list of dicts matching the batch length."""
+    resp = openai.ChatCompletion.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": SYSTEM_MSG},
+            {"role": "user",   "content": gpt_prompt(batch)},
+        ],
+        temperature=0,
+    )
+    txt = resp.choices[0].message.content.strip()
     try:
-        response = openai.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a recipe generator."},
-                {"role": "user", "content": generate_prompt(label)},
-            ],
-            temperature=0.8,
-        )
-        content = response.choices[0].message.content
-        recipe = json.loads(content)
-        recipe["label"] = label
-        return recipe
-    except Exception as e:
-        print(f"Error: {e}")
-        return None
+        data = json.loads(txt)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"⚠️  GPT did not return valid JSON:\n{txt}") from e
+    if not isinstance(data, list) or len(data) != len(batch):
+        raise ValueError("GPT response length mismatch.")
+    return data
 
+# --------------------------------------------------------------------- #
+def tag_ingredients(src: Path, out: Path, batch_size: int, debug: bool):
+    df  = pd.read_csv(src)
+    raw = df["ingredient"].tolist()
 
-def main():
-    all_recipes = []
-    seen_titles = set()
+    records: list[dict] = []
+    for i in range(0, len(raw), batch_size):
+        chunk = raw[i : i + batch_size]
+        data  = call_gpt(chunk)
+        records.extend(data)
 
-    for label in LABELS:
-        count = 0
-        while count < RECIPES_PER_LABEL:
-            print(f"[{label}] Generating recipe {count + 1}/{RECIPES_PER_LABEL}...")
-            recipe = call_gpt(label)
+        if debug:
+            ok   = sum(r["isVegan"] for r in data)        # type: ignore
+            keto = sum(r["isKeto"]  for r in data)        # type: ignore
+            print(f"🔍 GPT batch {i//batch_size+1:>3}: "
+                  f"{len(chunk)} items  |  vegan ✓ {ok}/{len(chunk)}  "
+                  f"keto ✓ {keto}/{len(chunk)}", file=sys.stderr)
 
-            if recipe and isinstance(recipe.get("ingredients"), list):
-                title = recipe["title"].strip().lower()
-                if title not in seen_titles:
-                    all_recipes.append(recipe)
-                    seen_titles.add(title)
-                    count += 1
-                else:
-                    print(f"Duplicate title skipped: {title}")
-            else:
-                print("Bad format, skipping...")
+    # final CSV — keep ONLY the three requested columns
+    with out.open("w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["ingredient", "isVegan", "isKeto"])
+        for r in records:
+            w.writerow([r["ingredient"], bool(r["isVegan"]), bool(r["isKeto"])])
 
-            time.sleep(random.uniform(1.5, 2.5))  # avoid rate limit
+    print(f"\n✅  {len(records):,} rows written → {out}")
 
-    with open(OUT_PATH, "w") as f:
-        json.dump(all_recipes, f, indent=2)
-
-    print(f"\n✅ Saved {len(all_recipes)} recipes to {OUT_PATH}")
-
-
+# --------------------------------------------------------------------- #
 if __name__ == "__main__":
-    main()
+    ap = argparse.ArgumentParser(description="Label ingredients as vegan / keto via GPT-3.5")
+    ap.add_argument("--src",        default="clean_ingredients.csv", type=Path,
+                    help="CSV generated by clean_ingredients.py")
+    ap.add_argument("--out",        default="ingredients_labeled.csv", type=Path)
+    ap.add_argument("--batch-size", default=25, type=int,
+                    help="how many ingredients to send per GPT request (default 25)")
+    ap.add_argument("--debug",      action="store_true",
+                    help="print one-line status after every GPT call")
+    args = ap.parse_args()
+
+    if "OPENAI_API_KEY" not in os.environ:
+        sys.exit("❌  Please set your OPENAI_API_KEY environment variable first.")
+
+    tag_ingredients(args.src, args.out, args.batch_size, args.debug)
