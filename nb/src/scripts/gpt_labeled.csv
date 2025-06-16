@@ -1,19 +1,18 @@
 ingredient,vegan,keto,source
 absinthe rinse,1,0,original
 acacia honey,0,0,original
-acai juice,1,1,original
+acai juice,1,0,original
 achiote paste,1,1,original
 acid powder,1,1,original
 agave nectar,1,0,gpt_extra
 almond flour,1,1,gpt_extra
-arrowroot powder,1,1,gpt_extra
-amaranth,1,1,gpt_extra
+arrowroot powder,1,0,gpt_extra
+amaranth,1,0,gpt_extra
 apple cider vinegar,1,1,gpt_extra
-acini pepe,1,1,original
+acini pepe,1,0,original
 additivefree salt,1,1,original
-adjustableblade blade,0,0,original
-adjustableblade wok,0,0,original
-adjustableblade attachment,0,0,original
+broccoli florets,1,1,original
+carrot sticks,1,0,original
 mushroom powder,1,1,gpt_extra
 coconut aminos,1,1,gpt_extra
 chia seeds,1,1,gpt_extra
@@ -25,26 +24,26 @@ agave honey,1,0,original
 agave syrup,1,0,original
 tahini,1,1,gpt_extra
 liquid smoke,1,1,gpt_extra
-agave tequila,1,0,original
+agave tequila,1,1,original
 ahi tuna,0,1,original
-aioli mayonnaise,0,0,original
+aioli mayonnaise,0,1,original
 aji amarillo,1,1,original
 aji dulce,1,1,original
 aji sauce,1,0,original
 albacore tuna,0,1,original
-ale bass,1,0,original
+ale bass,1,1,original
 alfalfa sprouts,1,1,original
-allbeef sausages,0,0,original
-acorn squash,1,1,gpt_extra
-anchovy paste,0,0,gpt_extra
+allbeef sausages,0,1,original
+acorn squash,1,0,gpt_extra
+anchovy paste,0,1,gpt_extra
 alligator pepper,1,1,original
 allpurposeplain flour,1,0,original
 allspice berries,1,1,original
 allspice berry,1,1,original
 allspice nutmeg,1,1,original
-amaranth seeds,1,1,gpt_extra
-beetroot powder,1,1,gpt_extra
-cassava flour,1,0,gpt_extra
+amaranth seeds,1,0,gpt_extra
+beetroot powder,1,0,gpt_extra
+cassava flour,1,1,gpt_extra
 almond aioli,1,0,original
 almond butter,1,1,original
 almond cakes,0,0,original
@@ -55,7 +54,7 @@ sunflower lecithin,1,1,gpt_extra
 almond extract,1,1,original
 almond meal,1,1,original
 almond milk,1,1,original
-almond liqueur,0,0,original
+almond liqueur,1,0,original
 almond oil,1,1,gpt_extra
 almond paste,1,0,gpt_extra
 almond yogurt,1,0,gpt_extra
@@ -63,10 +62,10 @@ almond flakes,1,1,gpt_extra
 almond slices,1,1,original
 almond syrup,1,0,original
 almonds cake,0,0,original
-almonds grinder,1,1,original
+almonds ,1,1,original
 almonds marcona,1,1,original
 almonds pecan,1,1,original
-almonds pistachios,1,1,original
+almonds pistachios,1,0,original
 almonds powder,1,1,original
 peanuts,1,0,gpt_extra
 walnuts,1,1,gpt_extra
@@ -76,19 +75,19 @@ macadamia nuts,1,1,gpt_extra
 brazil nuts,1,1,gpt_extra
 almonds,1,1,gpt_extra
 avocados,1,1,gpt_extra
-pears,1,1,gpt_extra
+pears,1,0,gpt_extra
 riesling,1,0,gpt_extra
-pans,1,0,gpt_extra
+olive oil,1,1,gpt_extra
 avocado oil,1,1,gpt_extra
 pearl onions,1,1,gpt_extra
-riesling vinegar,1,0,gpt_extra
-amaranth flour,1,1,original
+riesling vinegar,1,1,gpt_extra
+amaranth flour,1,0,original
 amaretto liqueur,1,0,original
 amaretto liquor,1,0,original
 amaro averna,1,0,original
 amaretto frangelico,1,0,original
 coconut flour,1,1,gpt_extra
-cashew cream,1,1,gpt_extra
+cashew cream,1,0,gpt_extra
 amaro montenegro,1,0,original
 amarone wine,1,0,original
 amber beer,1,0,original
@@ -96,7 +95,7 @@ amber lager,1,0,original
 amber rum,1,0,original
 coconut oil,1,1,gpt_extra
 american caviar,0,1,original
-american lager,1,1,original
+american lager,1,0,original
 amontillado sherry,1,1,original
 tofu noodles,1,1,gpt_extra
 cauliflower rice,1,1,gpt_extra
@@ -122,7 +121,7 @@ anchovy powder,0,1,gpt_extra
 anchovy fillets,0,1,original
 chervil,1,1,gpt_extra
 coconut,1,1,gpt_extra
-cream,0,0,gpt_extra
+cream,0,1,gpt_extra
 andor tofu,1,1,gpt_extra
 andor almond flour,1,1,gpt_extra
 andor ghee,0,1,gpt_extra
@@ -153,17 +152,17 @@ anisette liqueur,0,0,original
 annatto paprika,1,1,original
 annatto powder,1,1,original
 appenzeller cheese,0,0,original
-amaranth grain,1,1,gpt_extra
+amaranth grain,1,0,gpt_extra
 ashwagandha powder,1,1,gpt_extra
-apple bitters,1,1,original
+apple bitters,1,0,original
 apple brandy,1,0,original
 apple butter,1,0,original
 apple chutney,1,0,original
-apple cider,1,1,original
-apple vinegar,1,1,gpt_extra
+apple cider,1,0,original
+apple vinegar,1,0,gpt_extra
 apple molasses,1,0,gpt_extra
 apple syrup,1,0,gpt_extra
-apple extract,1,1,gpt_extra
+apple extract,1,0,gpt_extra
 apple oil,1,1,gpt_extra
 apple gala,1,1,original
 apple jelly,1,0,original
@@ -172,43 +171,43 @@ apple rings,1,1,original
 apple sauce,1,0,original
 apple pie filling,0,0,gpt_extra
 apple cider donut,0,0,gpt_extra
-apple slices,1,1,original
+apple slices,1,0,original
 applecranberry juice,1,0,original
 applejack brandy,1,0,original
 apple slaw,1,0,original
-apples cut,1,1,original
-apple mint,1,1,gpt_extra
+apples cut,1,0,original
+apple mint,1,0,gpt_extra
 applewood smoked salt,1,1,gpt_extra
-apples,1,1,gpt_extra
-apples halfmoons,1,1,original
-apples pippin,1,1,original
-apples rings,1,1,original
-apples slices,1,1,original
+apples,1,0,gpt_extra
+apples halfmoons,1,0,original
+apples pippin,1,0,original
+apples rings,1,0,original
+apples slices,1,0,original
 applewood bacon,0,0,original
-parmesan,0,0,gpt_extra
-apples tart,1,1,original
+parmesan,0,1,gpt_extra
+apples tart,1,0,original
 apricots,1,1,gpt_extra
-approx parmesan,0,0,original
-approx christmas,0,0,original
-apricot apricots,1,1,original
+parmesan cheese,0,1,original
+ground cinnamon,1,1,original
+apricot apricots,1,0,original
 apricot brandy,1,0,original
-apricot fruit,1,1,original
+apricot fruit,1,0,original
 apricot glaze,1,0,original
 apricot jam,1,0,original
 apricot liqueur,1,0,original
-apricot extract,1,1,gpt_extra
+apricot extract,1,0,gpt_extra
 apricot oil,1,1,gpt_extra
-apricot puree,1,1,gpt_extra
+apricot puree,1,0,gpt_extra
 apricot seeds,1,1,gpt_extra
 apricot vinegar,1,1,gpt_extra
 apricot nectar,1,0,original
-apricot peach,1,1,original
+apricot peach,1,0,original
 apricot preserves,1,0,original
 apricotpineapple nectar,1,0,original
-apricots half,1,1,original
+apricots half,1,0,original
 apricot flour,1,1,gpt_extra
 apricot syrup,1,0,gpt_extra
-plums,1,1,gpt_extra
+plums,1,0,gpt_extra
 prunes,1,1,gpt_extra
 aquafaba,1,1,gpt_extra
 vodka,1,1,gpt_extra
@@ -216,9 +215,9 @@ arbol chiles,1,1,original
 arborio rice,1,0,original
 arctic char,0,1,original
 arepa flour,1,0,original
-arrowroot cornstarch,1,1,original
-artichoke half,1,1,original
-artichoke patted,1,1,original
+arrowroot cornstarch,1,0,original
+artichoke half,1,0,original
+artichoke patted,1,0,original
 artichoke water,1,1,original
 bamboo shoots,1,1,gpt_extra
 daikon radish,1,1,gpt_extra
@@ -237,17 +236,17 @@ arugula,1,1,gpt_extra
 watercress,1,1,gpt_extra
 asafetida powder,1,1,original
 asafoetida powder,1,1,original
-asahi beer,0,0,original
+asahi beer,1,0,original
 tender arugula,1,1,gpt_extra
 arugula watercress,1,1,original
 asafetida,1,1,gpt_extra
 asafoetida,1,1,gpt_extra
 beer,1,0,gpt_extra
-asiago cheese,0,0,original
+asiago cheese,0,1,original
 asparagus cut,1,1,original
 asian oil,1,1,original
 asian pear,1,1,original
-asian rice,1,1,original
+asian rice,1,0,original
 zucchini noodles,1,1,gpt_extra
 asparagus,1,1,gpt_extra
 assorted mushrooms,1,1,original
@@ -264,19 +263,19 @@ avocado paste,1,1,gpt_extra
 avocado puree,1,1,gpt_extra
 avocado slices,1,1,gpt_extra
 avocado spread,1,1,gpt_extra
-baby artichokes,1,1,original
+baby artichokes,1,0,original
 baby arugula,1,1,original
 avocados water,1,1,original
 baby basil,1,1,original
-baby beet,1,1,original
-baby beets,1,1,original
-baby brussels,1,1,original
+baby beet,1,0,original
+baby beets,1,0,original
+baby brussels,1,0,original
 baby cake,0,0,original
-baby carrots,1,1,gpt_extra
+baby carrots,1,0,gpt_extra
 baby kale,1,1,gpt_extra
 baby spinach,1,1,gpt_extra
 baby zucchini,1,1,gpt_extra
-baby corn,1,1,original
+baby corn,1,0,original
 baby eggplant,1,1,original
 baby fennel,1,1,original
 baby bell peppers,1,1,gpt_extra
@@ -285,7 +284,7 @@ baby leeks,1,1,gpt_extra
 baby frisee,1,1,original
 baby green,1,1,original
 baby greens,1,1,original
-baby heirloom,1,1,original
+baby heirloom tomatoes,1,1,original
 baby mustard greens,1,1,gpt_extra
 baby tatsoi,1,1,gpt_extra
 baby lemon,1,1,original
@@ -297,41 +296,41 @@ baby okra,1,1,original
 baby parsley,1,1,original
 baby pattypan,1,1,original
 baby peas,1,1,original
-baby pineapple,1,1,original
-baby potatoes,1,1,original
+baby pineapple,1,0,original
+baby potatoes,1,0,original
 baby romaine,1,1,original
 baby shrimp,0,1,original
-baby pork,0,0,original
+baby pork,0,1,original
 baby tomatoes,1,1,original
 baby turnips,1,1,original
-baby summer,1,1,original
-baby vegetables,1,1,original
+baby summer squash,1,1,original
+baby vegetables,1,0,original
 baby broccoli,1,1,gpt_extra
-bacon,0,0,gpt_extra
-bacon benton,0,0,original
-bacon crisp,0,0,original
-bacon crispy,0,0,original
-backbone neck,0,0,original
-backbones wing,0,0,original
-bacon cut,0,0,original
-bacon drippings,0,0,original
-bacon fat,0,0,original
-bacon ham,0,0,original
-bacon pancetta,0,0,original
+bacon,0,1,gpt_extra
+bacon benton,0,1,original
+bacon crisp,0,1,original
+bacon crispy,0,1,original
+chicken necks,0,1,original
+chicken wings,0,1,original
+bacon cut,0,1,original
+bacon drippings,0,1,original
+bacon fat,0,1,original
+bacon ham,0,1,original
+bacon pancetta,0,1,original
 tempeh bacon,1,0,gpt_extra
 coconut bacon,1,1,gpt_extra
 smoked tofu bacon,1,1,gpt_extra
 seitan bacon,1,0,gpt_extra
 mushroom bacon,1,1,gpt_extra
-bacon rashers,0,0,original
-bacon slices,0,0,original
-bacon squares,0,0,original
+bacon rashers,0,1,original
+bacon slices,0,1,original
+bacon squares,0,1,original
 bagel chips,1,0,original
 bagels,1,0,gpt_extra
 tofu strips,1,1,gpt_extra
 almond flour bagels,1,1,gpt_extra
 cherries,1,0,gpt_extra
-cranberries,1,1,gpt_extra
+cranberries,1,0,gpt_extra
 marshmallows,0,0,gpt_extra
 peas,1,1,gpt_extra
 radishes,1,1,gpt_extra
@@ -348,14 +347,14 @@ baguette half,0,0,original
 baguettes baguette,0,0,original
 baguette crumbs,1,0,gpt_extra
 baguette dough,1,0,gpt_extra
-baguette flour,1,1,gpt_extra
-baguette seasoning,1,1,gpt_extra
+baguette flour,1,0,gpt_extra
+baguette seasoning,1,0,gpt_extra
 baguette spread,1,0,gpt_extra
 baharat raselhanout,1,0,original
 baharat seasoning,1,1,original
 bakery buns,0,0,original
 bakery rolls,0,0,original
-baking dish,1,1,original
+baking soda,1,1,original
 baking flour,1,0,original
 baking powder,1,1,original
 balchao masala,1,1,original
@@ -374,21 +373,17 @@ butternut squash noodles,1,1,gpt_extra
 banana bread,1,0,original
 banana cut,1,0,original
 bamboo skewers,1,0,original
-banana fork,1,0,original
+banana,1,0,original
 banana ketchup,1,0,original
 banana liqueur,1,0,original
-banana peppers,1,1,original
-banana slices,1,1,original
-banana coins,1,1,gpt_extra
-banana flour,1,1,gpt_extra
+banana slices,1,0,original
+banana coins,1,0,gpt_extra
+banana flour,1,0,gpt_extra
 banana chips,1,0,gpt_extra
-banana puree,1,1,gpt_extra
 banana extract,1,1,gpt_extra
 banana leaves,1,1,gpt_extra
 bananas,1,0,gpt_extra
 baobab powder,1,1,original
-bananas fork,1,0,original
-bananas ovals,1,0,original
 bananas slices,1,0,original
 bananas thickslices,1,0,original
 bar chocolate,1,0,original
@@ -397,21 +392,20 @@ barbecue sauce,0,0,original
 barberries cherries,1,1,original
 barberries cranberries,1,1,original
 balsamic glaze,1,0,gpt_extra
-burdock root,1,1,gpt_extra
+burdock root,1,0,gpt_extra
 barley flour,1,0,original
 barley grain,1,1,original
 barramundi fillets,0,1,original
 bars chocolate,0,0,original
-bartlett pears,1,1,original
+bartlett pears,1,0,original
 barley malt,1,0,gpt_extra
 bok choy,1,1,gpt_extra
 black sesame seeds,1,1,gpt_extra
 blackstrap molasses,1,0,gpt_extra
-base batter,1,0,original
-basil approx,1,1,original
+all-purpose flour,1,0,original
+basil leaves,1,1,original
 basil arugula,1,1,original
-basil bite,1,1,original
-basil chia,1,1,original
+basil seeds,1,1,original
 basil chiffonade,1,1,original
 basil cilantro,1,1,original
 basil fingers,1,1,original
@@ -433,32 +427,32 @@ almond,1,1,gpt_extra
 zucchini,1,1,gpt_extra
 basil thai,1,1,original
 basilfennel syrup,1,0,original
-blueberries,1,1,gpt_extra
-strawberries,1,1,gpt_extra
+blueberries,1,0,gpt_extra
+strawberries,1,0,gpt_extra
 fennel pollen,1,1,gpt_extra
 blue spirulina,1,1,gpt_extra
-dragon fruit,1,1,gpt_extra
-blackberries,1,1,gpt_extra
-goji berries,1,1,gpt_extra
+dragon fruit,1,0,gpt_extra
+blackberries,1,0,gpt_extra
+goji berries,1,0,gpt_extra
 basmati rice,1,0,original
 bass fillet,0,1,original
 bass fillets,0,1,original
-bass gutted,0,0,original
-bass branzino,0,0,original
+bass gutted,0,1,original
+bass branzino,0,1,original
 shirataki noodles,1,1,gpt_extra
 tempeh,1,0,gpt_extra
 batter cupcakes,0,0,original
-baulibrand,0,0,gpt_extra
+panettone,0,0,gpt_extra
 bavarian mustard,1,1,original
 bay california,1,1,original
-batches icingepirecipelinkepirecipelink,0,0,original
+cake icing,0,0,original
 bavarian cream,0,0,gpt_extra
-balsamic vinegar,1,1,gpt_extra
+balsamic vinegar,1,0,gpt_extra
 black beans,1,0,gpt_extra
 brown rice,1,0,gpt_extra
 broccoli,1,1,gpt_extra
 bay powder,1,1,original
-bay scallops,0,0,original
+bay scallops,0,1,original
 bay seasoning,1,1,original
 bay shrimp,0,1,original
 bay half,1,1,original
@@ -466,135 +460,133 @@ bay leaves,1,1,gpt_extra
 bay oil,1,1,gpt_extra
 bay vinegar,1,1,gpt_extra
 bay tofu,1,1,gpt_extra
-bay tempeh,1,1,gpt_extra
+bay tempeh,1,0,gpt_extra
 bay thyme,1,1,original
 bean curd,1,1,original
 tofu,1,1,gpt_extra
 bbq sauce,0,0,original
 bbq marinade,0,0,original
 bean curdtofu,1,1,original
-soy curls,1,1,gpt_extra
+soy curls,1,0,gpt_extra
 bean paste,1,0,original
 bean sauce,1,0,original
 bean spread,1,0,original
 bean sprouts,1,1,original
-bean variety,1,1,original
+bean variety,1,0,original
 black bean noodles,1,0,gpt_extra
-bean flour,1,1,gpt_extra
+bean flour,1,0,gpt_extra
 bean oil,1,1,gpt_extra
 bean chips,1,0,gpt_extra
-beans angle,1,0,original
-beans cannellini,1,1,original
-beans chickpeas,1,1,original
+green beans,1,1,original
+beans cannellini,1,0,original
+beans chickpeas,1,0,original
 beans emergo,1,0,original
-beans kale,1,1,original
-beans pinto,1,1,gpt_extra
-beans black,1,1,gpt_extra
-beans kidney,1,1,gpt_extra
-beans navy,1,1,gpt_extra
-beans garbanzo,1,1,gpt_extra
+beans kale,1,0,original
+beans pinto,1,0,gpt_extra
+beans black,1,0,gpt_extra
+beans kidney,1,0,gpt_extra
+beans navy,1,0,gpt_extra
+beans garbanzo,1,0,gpt_extra
 beans lima,1,0,original
 beans liquid,1,0,original
 beans markets,1,0,original
 beans lengths,1,0,original
 beans paste,1,0,original
 beans sauce,1,0,original
-beans string,1,1,original
-beans wax,1,1,original
-beans flakes,1,1,gpt_extra
+beans string,1,0,original
+beans wax,1,0,original
+beans flakes,1,0,gpt_extra
 beans sprouts,1,1,gpt_extra
 beans flour,1,0,gpt_extra
 beans chips,1,0,gpt_extra
 beans noodles,1,0,gpt_extra
 beans winter,1,0,original
-bearnaise butter,0,0,original
-bearnaise sauce,0,0,original
-bed seaweed,1,1,original
-bee pollen,1,1,original
+bearnaise butter,0,1,original
+bearnaise sauce,0,1,original
+dried seaweed,1,1,original
+bee pollen,0,0,original
 black radish,1,1,gpt_extra
 blue algae,1,1,gpt_extra
 buckwheat honey,0,0,gpt_extra
 barley grass,1,1,gpt_extra
-beef bison,0,0,original
-beef bones,0,0,original
-beef bouillon,0,0,original
-beef brisket,0,0,original
-beef broth,0,0,original
-beef cheeks,0,0,original
-beef chuck,0,0,original
-beef eye,0,0,original
-beef lamb,0,0,original
-beef cut,0,0,original
-chicken thighs,0,0,gpt_extra
-pork belly,0,0,gpt_extra
-lamb shank,0,0,gpt_extra
-turkey breast,1,1,gpt_extra
+beef bison,0,1,original
+beef bones,0,1,original
+beef bouillon,0,1,original
+beef brisket,0,1,original
+beef broth,0,1,original
+beef cheeks,0,1,original
+beef chuck,0,1,original
+beef eye,0,1,original
+beef lamb,0,1,original
+beef cut,0,1,original
+chicken thighs,0,1,gpt_extra
+pork belly,0,1,gpt_extra
+lamb shank,0,1,gpt_extra
+turkey breast,0,1,gpt_extra
 salmon fillet,0,1,gpt_extra
 beef marrowbones,0,1,original
-beef meat,0,0,original
-beef racks,0,0,original
-beef reduction,0,0,original
-beef roast,0,0,original
-beef shank,0,0,original
-beef shanks,0,0,original
-beef sirloin,0,0,original
-beef steak,0,0,original
-beef steaks,0,0,original
-beef stock,0,0,original
+beef meat,0,1,original
+beef racks,0,1,original
+beef reduction,0,1,original
+beef roast,0,1,original
+beef shank,0,1,original
+beef shanks,0,1,original
+beef sirloin,0,1,original
+beef steak,0,1,original
+beef steaks,0,1,original
+beef stock,0,1,original
 beef suet,0,1,original
-beef tenderloin,0,0,original
-beef turkey,0,0,original
-beef vegetables,0,0,original
+beef tenderloin,0,1,original
+beef turkey,0,1,original
 beef bone marrow,0,1,gpt_extra
 beef jerky,0,1,gpt_extra
-beef liver,0,0,gpt_extra
+beef liver,0,1,gpt_extra
 beef tallow,0,1,gpt_extra
-beef tripe,0,0,gpt_extra
+beef tripe,0,1,gpt_extra
 beefsteak tomato,1,1,original
 beer mustard,1,1,original
-beer pacifico,0,0,original
-beer porter,0,0,original
+beer pacifico,1,0,original
+beer porter,1,0,original
 beet greens,1,1,original
 beet horseradish,1,1,original
-beer soda,0,0,original
-beet noodles,1,1,gpt_extra
-beer stout,0,0,gpt_extra
-beet powder,1,1,gpt_extra
-beer lager,0,0,gpt_extra
+beer soda,1,0,original
+beet noodles,1,0,gpt_extra
+beer stout,1,0,gpt_extra
+beet powder,1,0,gpt_extra
+beer lager,1,0,gpt_extra
 beet chips,1,0,gpt_extra
 beet sauce,1,0,original
-beets bite,1,1,original
+beets bite,1,0,original
 beets cocktails,1,0,original
-beets color,1,1,original
-beets cut,1,1,original
+beets color,1,0,original
+beets cut,1,0,original
 beet hummus,1,0,gpt_extra
-beet slaw,1,1,gpt_extra
-beets golden,1,1,original
-beets greens,1,1,original
+beet slaw,1,0,gpt_extra
+beets golden,1,0,original
+beets greens,1,0,original
 beets radishes,1,1,original
 bel cheese,0,0,original
-beets liquid,1,1,original
-beets chips,1,1,gpt_extra
-beets noodles,1,1,gpt_extra
-beets powder,1,1,gpt_extra
+beets chips,1,0,gpt_extra
+beets noodles,1,0,gpt_extra
+beets powder,1,0,gpt_extra
 bel pepper,1,1,gpt_extra
-beets flakes,1,1,gpt_extra
+beets flakes,1,0,gpt_extra
 bell pepper,1,1,original
-beluga lentils,1,1,original
-benedictine liqueur,0,0,original
+beluga lentils,1,0,original
+benedictine liqueur,0,1,original
 benne sesame,1,1,original
 red cabbage,1,1,gpt_extra
 berries chocolate,1,0,original
-berries mango,1,1,original
-bernheim whiskey,0,0,original
-benriner adjustableblade,1,1,original
-berries choice,1,1,original
-berries,1,1,gpt_extra
+berries mango,1,0,original
+bernheim whiskey,1,1,original
+daikon radish slices,1,1,original
+berries choice,1,0,original
+berries,1,0,gpt_extra
 mint,1,1,gpt_extra
-yogurt,0,0,gpt_extra
-berry sauce,1,1,original
+yogurt,0,1,gpt_extra
+berry sauce,1,0,original
 coconut yogurt,1,1,gpt_extra
-mixed berries,1,1,gpt_extra
+mixed berries,1,0,gpt_extra
 berry sorbets,1,0,original
 bibb lettuce,1,1,original
 bicarbonate soda,1,1,original
@@ -602,7 +594,7 @@ blue spirulina powder,1,1,gpt_extra
 black salt,1,1,gpt_extra
 big raisins,1,0,original
 bigeye tuna,0,1,original
-bing cherries,1,1,original
+bing cherries,1,0,original
 bird chiles,1,1,original
 birdseye chile,1,1,original
 butternut squash,1,1,gpt_extra
@@ -687,28 +679,28 @@ bone broth,0,1,original
 bonein beef,0,0,original
 bonein branzino,0,0,original
 boilinghot water,1,1,original
-bonein breast,0,0,original
-bonein chicken,0,0,original
+bonein breast,0,1,original
+bonein chicken,0,1,original
 bonein halibut,0,0,original
 bonein ham,0,0,original
 bonein eye,0,0,original
 bonein tofu,1,1,gpt_extra
-bonein salmon,0,0,gpt_extra
-bonein pork,0,0,gpt_extra
-bonein lamb,0,0,gpt_extra
-bonein roast,0,0,original
-boneless beef,0,0,original
-boneless denver,0,0,original
-boneless eye,0,0,original
-boneless chicken,0,0,gpt_extra
-boneless pork,0,0,gpt_extra
-boneless turkey,0,0,gpt_extra
-boneless ham,0,0,original
-boneless meat,0,0,original
-boneless roast,0,0,original
-boneless eyes,0,0,original
-boneless fat,0,0,original
-boneless steak,0,0,original
+bonein salmon,0,1,gpt_extra
+bonein pork,0,1,gpt_extra
+bonein lamb,0,1,gpt_extra
+bonein roast,0,1,original
+boneless beef,0,1,original
+boneless denver,0,1,original
+boneless eye,0,1,original
+boneless chicken,0,1,gpt_extra
+boneless pork,0,1,gpt_extra
+boneless turkey,0,1,gpt_extra
+boneless ham,0,1,original
+boneless meat,0,1,original
+boneless roast,0,1,original
+boneless eyes,0,1,original
+boneless fat,0,1,original
+boneless steak,0,1,original
 bonito flakes,1,1,original
 bonito tuna,0,0,original
 borlotti beans,1,1,original

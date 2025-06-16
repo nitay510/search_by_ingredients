@@ -1,94 +1,49 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
-Clean the ingredient CSV in preparation for model-training.
+prep_for_training.py
+────────────────────
+Create *deduplicated, noise-reduced* CSVs for two separate
+classification tasks: keto and vegan.
 
-• removes obvious non-food rows (pan, blade, inches, etc.)
-• normalises text (ASCII, lower-case, single-spaced, singular form)
-• drops duplicates
-• quick sanity flags for vegan / keto
-• writes:
-    clean_ingredients_full.csv      – everything we keep
-    clean_ingredients_flagged.csv   – rows where auto vegan/keto ≠ original
+INPUTS  : ingredients_keto_fixed.csv   (orig_index, ingredient, keto,  reason)
+          ingredients_vegan_fixed.csv  (orig_index, ingredient, vegan, reason)
+
+OUTPUTS : train_keto.csv   (ingredient, keto)
+          train_vegan.csv  (ingredient, vegan)
 """
+
+from pathlib import Path
 import re
-import unicodedata
-import inflect
-import pathlib
 import pandas as pd
 
-RAW_CSV = "gpt_labeled.csv"        # <-- change if your file is named differently
-OUT_DIR = pathlib.Path(".")
+KETO_SRC  = Path("ingredients_keto.csv")
+VEGAN_SRC = Path("ingredients_vegan.csv")
 
-##############################################################################
-# 1.  read
-##############################################################################
-df = pd.read_csv(RAW_CSV)
+# ---------- helper: text normaliser ----------
+_spaces = re.compile(r"\s+")
+def clean(text: str) -> str:
+    """lower-case, strip, collapse internal whitespace"""
+    return _spaces.sub(" ", str(text).strip().lower())
+# ---------------------------------------------
 
-##############################################################################
-# 2.  filter out non-edible/tool words (non-capturing groups so pandas is happy)
-##############################################################################
-NON_FOOD = re.compile(
-    r"\b(?:"
-    r"blade|adjustableblade|attachment|pan|wok|mold|mould|styrofoam|plank|rack|"
-    r"plate|bowl|ramekin|pans?|spoon|skewer|strainer|foil|wrap|liner|"
-    r"wire|sheet|tray|pot|kilogram|gram|liter|minutes?|hours?|seconds?|"
-    r"inch(?:es)?|centimeters?|milliliters?|class coupe|crafts? pencil|"
-    r"notes (?:roast|salt|sausage)|batches icing|transfer letters"
-    r")\b",
-    flags=re.I,
-)
-df = df.loc[~df["ingredient"].str.contains(NON_FOOD, regex=True, na=False)]
+# load
+keto  = pd.read_csv(KETO_SRC , dtype=str)
+vegan = pd.read_csv(VEGAN_SRC, dtype=str)
 
-##############################################################################
-# 3. normalise + dedupe
-##############################################################################
-inflector = inflect.engine()
+# normalise & de-dup
+keto["ingredient"]  = keto["ingredient"].map(clean)
+vegan["ingredient"] = vegan["ingredient"].map(clean)
 
-def ascii_slug(text: str) -> str:
-    """→ ascii lower-case words, single space."""
-    text = (
-        unicodedata.normalize("NFKD", text)
-        .encode("ascii", "ignore")
-        .decode("ascii")
-        .lower()
-    )
-    text = re.sub(r"[^a-z0-9\s]", " ", text)   # drop punctuation
-    text = re.sub(r"\s+", " ", text).strip()
-    # singular-ise every token
-    tokens = [inflector.singular_noun(tok) or tok for tok in text.split()]
-    return " ".join(tokens)
+keto  = keto.drop_duplicates("ingredient", keep="first")
+vegan = vegan.drop_duplicates("ingredient", keep="first")
 
-df["ingredient_norm"] = df["ingredient"].fillna("").astype(str).apply(ascii_slug)
-df = df.drop_duplicates("ingredient_norm").reset_index(drop=True)
+# keep only task columns
+keto_out  = keto[["ingredient", "keto"]].copy()
+vegan_out = vegan[["ingredient", "vegan"]].copy()
 
-##############################################################################
-# 4. vegan / keto heuristics
-##############################################################################
-VEGAN_BAD = re.compile(
-    r"beef|pork|ham|bacon|lamb|veal|turkey|chicken|duck|goat|"
-    r"fish|salmon|tuna|anchov|sardine|shellfish|shrimp|prawn|crab|lobster|"
-    r"sausage|prosciutto|chorizo|gelatin\b|egg\b|honey\b|cheese|milk|butter|cream|yogurt",
-    flags=re.I,
-)
-KETO_BAD = re.compile(
-    r"sugar|syrup|honey|molasses|maple|agave|rice\b|corn\b|oats?\b|wheat|"
-    r"barley|millet|quinoa|bread|pasta|noodle|flour|grain|bean|lentil|chickpea|pea\b|"
-    r"potato|yam|cassava|taro|banana|apple|pear|orange|apricot|pineapple|mango|grape",
-    flags=re.I,
-)
+# write
+keto_out .to_csv("train_keto.csv" ,  index=False)
+vegan_out.to_csv("train_vegan.csv", index=False)
 
-df["vegan_auto"] = (~df["ingredient_norm"].str.contains(VEGAN_BAD)).astype(int)
-df["keto_auto"]  = (~df["ingredient_norm"].str.contains(KETO_BAD )).astype(int)
-flagged = df.loc[(df.vegan != df.vegan_auto) | (df.keto != df.keto_auto)]
-
-##############################################################################
-# 5. write
-##############################################################################
-OUT_DIR.mkdir(exist_ok=True, parents=True)
-df.to_csv(OUT_DIR / "clean_ingredients_full.csv",   index=False)
-flagged.to_csv(OUT_DIR / "clean_ingredients_flagged.csv", index=False)
-
-print(
-    f"✅ Cleaned: kept {len(df):,} unique ingredients • "
-    f"flagged {len(flagged):,} for manual review"
-)
+print(f"✔  keto rows : {len(keto_out)}")
+print(f"✔  vegan rows: {len(vegan_out)}")
