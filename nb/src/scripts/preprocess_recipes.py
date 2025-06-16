@@ -1,82 +1,115 @@
 #!/usr/bin/env python3
 """
-Clean + merge two ingredient files and auto-label VEGAN / KETO flags.
-
-Usage
------
-    python merge_and_label.py          # use BOTH csvs
-    python merge_and_label.py --skip-candidates    # only the clean 5 500 list
+  $ python clean_ingredients_v2.py --src recipes.csv --col Ingredients \
+                                   --max-words 3 --debug
 """
-import re, argparse, pandas as pd, pathlib, csv
+from __future__ import annotations
+import argparse, re, unicodedata, string, sys
+from pathlib import Path
+import pandas as pd, spacy
 
-# ------------------------- command-line switches
-argp = argparse.ArgumentParser()
-argp.add_argument("--skip-candidates", action="store_true",
-                  help="ignore candidates_raw.csv entirely")
-args = argp.parse_args()
+# ────────────────────────────────────────────────────────────────────
+# 1.  ultra-fast regex scrub
+# ────────────────────────────────────────────────────────────────────
+FRACTIONS = "¼½¾⅓⅔⅛⅜⅝⅞"
+NUMBERS   = r"\d+(?:\.\d+)?(?:/\d+)?"
+UNITS     = r"""
+    cups?|c|tbsp|tablespoons?|tbs|tsp|teaspoons?|lbs?|pounds?|oz|ounces?|
+    grams?|g|kg|kilograms?|ml|l|liters?|litres?|pints?|pt|quarts?|qt|gal|gallons?
+"""
+EQUIP  = r"""
+    bowl|skillet|pan|pot|sheet|tray|knife|foil|jar|glass|loaf|bundt|
+    springform|gratin|processor|ricer|thermometer|spatula|stone|rack|
+    slicer|tongs?|bag|box|package|pouch|cooker|blender|torch
+"""
+# words & patterns that never belong to an ingredient
+FILLER = r"""
+    (?:at\s+)?room\s+temperature|additional|accompaniments?|optional|about|roughly|
+    plus|divided|for\s+serving|serve|servings?|to\s+taste|needed?|prepared|
+    large|small|medium|extra|jumbo|mini|fresh|freshly|frozen|raw|cooked|dry|dried|
+    skin(?:less|-on)?|bone(?:less|-in)?|lean|whole|halves?|quarters?|trimmed|
+    chopped|minced|sliced|diced|ground|peeled|seeded|pitted|grated|shredded|
+    julienned|matchsticks?|strips?|chunks?|cubes?|pieces?|wedges?|bias|crosswise|
+    lengthwise|diagonal|inch(?:es|long|wide|thick|-thick|diameter|square)?|cm|mm|
+    colour|colored|ripe|unripe|cold|warm|hot
+"""
 
-# ------------------------- helpers
-HERE = pathlib.Path(__file__).absolute().parent
-def load_words(fname):
-    return set(w.strip() for w in open(HERE / "rules" / fname, encoding="utf-8"))
+RE_NUM   = re.compile(rf"(?:{NUMBERS}|[{FRACTIONS}])")
+RE_UNIT  = re.compile(rf"\b(?:{UNITS})\b",   re.I|re.X)
+RE_EQUIP = re.compile(rf"\b(?:{EQUIP})\b",   re.I|re.X)
+RE_FILL  = re.compile(rf"(?:{FILLER})",      re.I|re.X)
+PUNCT_TR = str.maketrans("", "", string.punctuation)  # delete punctuation
+CELL_SPLIT = re.compile(r"'([^']+)'")                # split "['a','b']"
 
-ANIMAL  = load_words("animal_words.txt")
-HI_CARB = load_words("high_carb_words.txt")
-
-def tidy(txt: str) -> str:
+def fast_scrub(txt: str) -> str:
+    """Single rapid regex pass – no spaCy yet."""
+    txt = unicodedata.normalize("NFKD", txt).encode("ascii", "ignore").decode()
     txt = txt.lower()
-    txt = re.sub(r"[^\w\s%-]", " ", txt)     # keep letters, digits, % - _
+    txt = re.sub(r"\([^)]*\)", " ", txt)          # kill (...) comments
+    txt = RE_NUM.sub(" ", txt)
+    txt = RE_UNIT.sub(" ", txt)
+    txt = RE_FILL.sub(" ", txt)
+    txt = txt.translate(PUNCT_TR)
     txt = re.sub(r"\s+", " ", txt).strip()
-    return txt
+    # filter out equipment lines that occasionally survive (e.g. “mixing bowl”)
+    return "" if (not txt or RE_EQUIP.search(txt)) else txt
 
-def vegan(word: str) -> int:
-    return 0 if any(a in word for a in ANIMAL) else 1
+# ────────────────────────────────────────────────────────────────────
+# 2.  spaCy – keep *runs* of NOUN / PROPN (incl. multi-word)
+# ────────────────────────────────────────────────────────────────────
+NLP = spacy.load("en_core_web_sm", disable=["parser", "ner"])
+KEEP   = {"NOUN", "PROPN"}
+STOP_NOUNS = {"package", "packages", "equipment", "recipe"}  # easy to extend
 
-def keto(word: str) -> int:
-    if any(a in word for a in ANIMAL):
-        return 1
-    if any(c in word for c in HI_CARB):
-        return 0
-    if re.search(r"(oil|butter|almond|walnut|pecan|avocado|hazelnut|fat)", word):
-        return 1
-    return 0
+def spacy_pass(phrases: list[str], max_words: int) -> list[str]:
+    out, seen = [], set()
+    for doc in NLP.pipe(phrases, batch_size=512):
+        buff = []
+        for tok in doc:
+            if tok.pos_ in KEEP and tok.lemma_ not in STOP_NOUNS:
+                buff.append(tok.lemma_)
+            else:
+                if 0 < len(buff) <= max_words:
+                    key = " ".join(buff)
+                    if key not in seen:
+                        out.append(key);  seen.add(key)
+                buff = []
+        # flush tail
+        if 0 < len(buff) <= max_words:
+            key = " ".join(buff)
+            if key not in seen:
+                out.append(key);  seen.add(key)
+    return out
 
-def read_csv(path) -> pd.Series:
-    """Return a Series of raw strings from first column called *ingredient* or index 0"""
-    df = pd.read_csv(path)
-    col = "ingredient" if "ingredient" in df.columns else df.columns[0]
-    return df[col]
+# ────────────────────────────────────────────────────────────────────
+def each_cell(series: pd.Series):
+    """Yield every raw ingredient string from the source column."""
+    for cell in series:
+        if not isinstance(cell, str):
+            continue
+        if cell.startswith("[") and "'" in cell:          # list-style cells
+            yield from CELL_SPLIT.findall(cell)
+        else:
+            yield from re.split(r"[\n,]+", cell)
 
-# ------------------------- load HIGH-quality list
-clean = read_csv("clean_master.csv").apply(tidy)
-print(f"[info] clean_master.csv   : {len(clean)} rows")
+def main(src: Path, col: str, out: Path, max_words: int, debug: bool):
+    df = pd.read_csv(src)
+    coarse = {c for raw in each_cell(df[col]) if (c := fast_scrub(raw))}
+    if debug:
+        print(f"⚙️  after regex pass: {len(coarse):,} unique strings", file=sys.stderr)
 
-frames = [pd.DataFrame({"ingredient": clean, "quality": "high"})]
+    fine = spacy_pass(sorted(coarse), max_words)
+    pd.DataFrame(fine, columns=["ingredient"]).to_csv(out, index=False)
+    print(f"✅ {len(fine):,} clean ingredients (≤{max_words} words) → {out}")
 
-# ------------------------- optionally load candidates
-if not args.skip_candidates:
-    cand_raw = read_csv("candidates_raw.csv")
-    # quick filter: drop rows shorter than 3 chars or containing {error,duplicate,exxx,…}
-    cand = (
-        cand_raw[~cand_raw.str.contains(r"\berror|\bduplicate|\bexxx|\d{5,}", case=False, na=False)]
-        .apply(tidy)
-        .pipe(lambda s: s[s.str.len() >= 3])
-        .drop_duplicates()
-    )
-    print(f"[info] candidates_raw.csv: {len(cand)} rows after auto-scrub")
-    frames.append(pd.DataFrame({"ingredient": cand, "quality": "medium"}))
+# ────────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--src",       default="Food Ingredients and Recipe Dataset with Image Name Mapping.csv")
+    ap.add_argument("--col",       default="Ingredients")
+    ap.add_argument("--out",       default="clean_ingredients_v2.csv")
+    ap.add_argument("--max-words", type=int, default=3, help="keep phrases of ≤ N tokens")
+    ap.add_argument("--debug",     action="store_true")
+    args = ap.parse_args()
 
-# ------------------------- merge, dedupe, label
-all_ing = (
-    pd.concat(frames, ignore_index=True)
-      .drop_duplicates(subset="ingredient")
-      .reset_index(drop=True)
-)
-all_ing["vegan"] = all_ing["ingredient"].apply(vegan)
-all_ing["keto"]  = all_ing["ingredient"].apply(keto)
-all_ing["notes"] = ""     # room for manual tweaks
-
-out = "ingredients_final.csv"
-all_ing.to_csv(out, index=False)
-print(f"[✓] wrote {out}  ({len(all_ing)} unique rows)")
-print(all_ing.head(10).to_markdown(index=False))   # sneak peek
+    main(Path(args.src), args.col, Path(args.out), args.max_words, args.debug)
