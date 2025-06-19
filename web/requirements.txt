@@ -5,3 +5,7 @@ requests==2.32.3
 pandas==2.2.3
 pyarrow==19.0.1
 tqdm
+joblib
+scikit-learn
+spacy>=3.0.0,<4.0.0
+
