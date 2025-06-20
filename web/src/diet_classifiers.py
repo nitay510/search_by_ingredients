@@ -1,28 +1,26 @@
-#!/usr/bin/env python3
-# web/src/diet_classifiers.py
 
-import logging, re, string, unicodedata
+import re
+import string
+import unicodedata
+from functools import lru_cache
 from typing import List
-import joblib
-import spacy
 from pathlib import Path
 
-# ─── logging ─────────────────────────────────────────────────────────
-log = logging.getLogger("diet")
-log.setLevel(logging.DEBUG)      # Switch to INFO to silence
-h = logging.StreamHandler()
-h.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
-log.addHandler(h)
+import joblib
+import spacy
 
-# ─── load spaCy (only tokenizer & tagger) ────────────────────────────
-log.info("Loading spaCy…")
+# ─── load spaCy (only tokenizer & tagger for speed) ─────────────────
 NLP = spacy.load("en_core_web_sm", disable=["parser", "ner"])
 KEEP_POS = {"NOUN", "PROPN"}
 
-# ─── vegan & keto hard rules ─────────────────────────────────────────
+# ─── hard lists for rules ───────────────────────────────────────────
 VEGAN_BLOCK = {
     "egg","cheese","butter","cream","yogurt","honey",
-    "anchovy","chicken","beef","shrimp","sausage"
+    "anchovy","chicken","beef","shrimp","sausage",
+    "fish","pork","lamb","goat","duck","turkey","bacon",
+    "milk","gelatin","honeycomb","caviar","oyster",
+    "clam","crab","lobster","scallop","shrimp",
+    "squid","octopus","mollusk","shellfish","scallop",
 }
 PLANT_BASES = {
     "almond","cashew","soy","oat","rice","coconut",
@@ -43,21 +41,16 @@ KETO_ALLOW = {
     "anchovy fillet","vodka","liqueur","ice","yogurt","bean"
 }
 
-# ─── load SVMs if present ────────────────────────────────────────────
-_base = Path(__file__).resolve().parent               # .../web
-_models = _base / "nutrition-ml"                       # .../web/nutrition-ml
-_keto_pkl = _models / "keto_svm.joblib"
-_vegan_pkl = _models / "vegan_svm.joblib"
-
+# ─── try loading SVM models if available ───────────────────────────
+_base   = Path(__file__).resolve().parent
+_models = _base / "nutrition-ml"
 try:
-    KETO_MODEL  = joblib.load(str(_keto_pkl))
-    VEGAN_MODEL = joblib.load(str(_vegan_pkl))
-    log.info(f"✅ Loaded SVMs from {_models}/")
-except Exception as e:
+    KETO_MODEL  = joblib.load(str(_models / "keto_svm.joblib"))
+    VEGAN_MODEL = joblib.load(str(_models / "vegan_svm.joblib"))
+except Exception:
     KETO_MODEL = VEGAN_MODEL = None
-    log.warning(f"⚠️  Could not load SVMs from {_models}/ ({e}) — falling back to rules only")
 
-# ─── quantity/unit stripping & punctuation removal ───────────────────
+# ─── regex for removing quantities, units, punctuation ──────────────
 FRACTIONS = "¼½¾⅓⅔⅛⅜⅝⅞"
 NUM       = rf"\d+(?:[./]\d+)?|[{FRACTIONS}]"
 UNITS_RE  = re.compile(
@@ -75,7 +68,7 @@ REMOVE_RE = re.compile(
 )
 
 def _fast_scrub(raw: str) -> str:
-    # remove "(…inch…)" then normalize
+    """Lowercase, drop numbers/units/punctuation/descriptors."""
     t = re.sub(r"\([^)]*inch[^)]*\)", " ", raw, flags=re.I)
     t = unicodedata.normalize("NFKD", t).encode("ascii","ignore").decode().lower()
     t = UNITS_RE.sub(" ", t)
@@ -85,6 +78,7 @@ def _fast_scrub(raw: str) -> str:
     return re.sub(r"\s+", " ", t).strip()
 
 def _to_key_phrases(text: str) -> str:
+    """Keep only short noun‐lemma chunks (1–3 words)."""
     buff, out = [], []
     for tok in NLP(text):
         if tok.pos_ in KEEP_POS:
@@ -97,55 +91,48 @@ def _to_key_phrases(text: str) -> str:
         out.append(" ".join(buff))
     return " ".join(out) if out else text
 
+@lru_cache(maxsize=8192)
 def preprocess(raw: str) -> str:
-    """Clean + extract noun‐phrase keys."""
+    """Full clean + noun‐phrase extraction, cached for speed."""
     return _to_key_phrases(_fast_scrub(raw))
 
-# ─── public API ─────────────────────────────────────────────────────
+# ─── public functions ────────────────────────────────────────────────
 
 def is_ingredient_keto(raw: str) -> bool:
+    """True if ingredient is keto‐friendly."""
     norm = preprocess(raw)
-    toks = norm.split()
-
-    # BLOCK → ALLOW → SVM
-    if any(t in KETO_BLOCK for t in toks):
-        log.debug(f"[KETO-BLOCK] '{raw}' → False")
+    # 1) any blocked term? → not keto
+    if any(blk in norm for blk in KETO_BLOCK):
         return False
-
-    if any(t in KETO_ALLOW for t in toks):
-        log.debug(f"[KETO-ALLOW] '{raw}' → True")
+    # 2) any allowed term? → keto
+    if any(ok in norm for ok in KETO_ALLOW):
         return True
-
+    # 3) SVM fallback if available
     if KETO_MODEL:
-        p = bool(KETO_MODEL.predict([norm])[0])
-        log.debug(f"[KETO-SVM] '{raw}' → {p}")
-        return p
-
-    log.debug(f"[KETO-DEFAULT] '{raw}' → False")
+        return bool(KETO_MODEL.predict([norm])[0])
+    # 4) default to False
     return False
 
 def is_ingredient_vegan(raw: str) -> bool:
+    """True if ingredient is vegan."""
     norm = preprocess(raw)
     toks = norm.split()
-
+    # 1) plant‐base in first position → vegan (e.g. "almond milk")
     if toks and toks[0] in PLANT_BASES:
-        log.debug(f"[VEGAN-PLANT] '{raw}' → True")
         return True
-
-    if any(t in VEGAN_BLOCK for t in toks):
-        log.debug(f"[VEGAN-BLOCK] '{raw}' → False")
+    # 2) block list → not vegan
+    if any(blk in toks for blk in VEGAN_BLOCK):
         return False
-
+    # 3) SVM fallback if available
     if VEGAN_MODEL:
-        p = bool(VEGAN_MODEL.predict([norm])[0])
-        log.debug(f"[VEGAN-SVM] '{raw}' → {p}")
-        return p
-    else:
-        log.warning(f"[VEGAN-DEFAULT] '{raw}' → False (no model)")
+        return bool(VEGAN_MODEL.predict([norm])[0])
+    # 4) default to False
     return False
 
 def is_keto(ings: List[str]) -> bool:
+    """True if all ingredients are keto‐friendly."""
     return all(is_ingredient_keto(i) for i in ings)
 
 def is_vegan(ings: List[str]) -> bool:
+    """True if all ingredients are vegan."""
     return all(is_ingredient_vegan(i) for i in ings)

@@ -1,127 +1,155 @@
 #!/usr/bin/env python3
 # diet_classifiers.py
 
-from __future__ import annotations
-import ast, logging, re, string, sys, unicodedata
+import ast
+import json
+import sys
+from argparse import ArgumentParser
+from functools import lru_cache
 from pathlib import Path
 from time import time
-from typing import List, Tuple, Any
+from typing import List
 
-import joblib, pandas as pd, spacy
-from sklearn.metrics import classification_report, confusion_matrix
+import joblib
+import pandas as pd
+import re, string, unicodedata
+import spacy
 
-# ──────────────────── logging / spaCy ───────────────────────────────
-log = logging.getLogger("diet")
-log.setLevel(logging.INFO)
-log.addHandler(logging.StreamHandler(stream=sys.stderr))
-NLP = spacy.blank("en")
-KEEP_POS = {"NOUN", "PROPN"}
+try:
+    from sklearn.metrics import classification_report, confusion_matrix
+except ImportError:
+    def classification_report(y, y_pred):
+        print('sklearn is not installed, skipping classification report')
+    def confusion_matrix(y, y_pred):
+        return []
 
-# ─────────────────── vegan / keto globals ───────────────────────────
-VEGAN_BLOCK = {"egg","cheese","butter","cream","yogurt","honey",
-               "anchovy","chicken","beef","shrimp","sausage"}
-PLANT_BASES = {"almond","cashew","soy","oat","rice","coconut",
-               "hemp","macadamia","peanut","walnut","hazelnut"}
+# ─── load spaCy (tokenizer+tagger only) ─────────────────────────────
+NLP = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
+KEEP_POS = {'NOUN', 'PROPN'}
 
-KETO_ALLOW = {"avocado","bacon","olive oil","egg","butter","cream",
-              "cheese","almond","coconut","stevia","erythritol",
-              "mushroom","pesto","cilantro","shallot","asparagus",
-              "artichoke","bay leaf","sherry","lemon","ginger root",
-              "green bean","spinach","vinegar","olive","walnut","caper",
-              "lime juice","salmon fillet","flank steak","anchovy fillet",
-              "vodka","liqueur","ice","pepper sauce","sweetener","yogurt","bean"}
-KETO_BLOCK = {"sugar","flour","rice","pasta","bread","potato","corn",
-              "oats","lentils","banana","apple","orange","carrot","honey",
-              "jam","cereal","cooking spray"}
+# ─── rule lists ────────────────────────────────────────────────────
+VEGAN_BLOCK = {
+    'egg','cheese','butter','cream','yogurt','honey',
+    'anchovy','chicken','beef','shrimp','sausage'
+}
+PLANT_BASES = {
+    'almond','cashew','soy','oat','rice','coconut',
+    'hemp','macadamia','peanut','walnut','hazelnut'
+}
 
-# these will be populated in main()
-_KETO_MAP: dict[str,bool]  = {}
-_VEGAN_MAP: dict[str,bool] = {}
+KETO_BLOCK = {
+    'sugar','flour','rice','pasta','bread','potato','corn',
+    'oats','lentils','banana','apple','orange','carrot',
+    'honey','jam','cereal','cooking spray'
+}
+KETO_ALLOW = {
+    'avocado','bacon','olive oil','egg','butter','cream','cheese',
+    'almond','coconut','stevia','erythritol','mushroom','pesto',
+    'cilantro','shallot','asparagus','artichoke','bay leaf','sherry',
+    'lemon','ginger root','green bean','spinach','vinegar','olive',
+    'walnut','caper','lime juice','salmon fillet','flank steak',
+    'anchovy fillet','vodka','liqueur','ice','yogurt','bean'
+}
 
-# ───────────────────────── quantity regexes ──────────────────────────
-FRACTIONS   = "¼½¾⅓⅔⅛⅜⅝⅞"
-NUM         = rf"\d+(?:[./]\d+)?|[{FRACTIONS}]"
-UNITS_LIST  = [
-    "cup","cups","tbsp","tablespoon","tablespoons","tbs","tsp","teaspoon","teaspoons",
-    "pound","pounds","lb","lbs","ounce","ounces","oz",
-    "gram","grams","kg","kilogram","kilograms","ml","l","liter","liters",
-    "pint","pints","pt","quart","quarts","qt","gal","gallon","gallons","inch","inches"
-]
-UNITS_RE    = re.compile(rf"\b(?:{'|'.join(map(re.escape, UNITS_LIST))})\b", re.I)
-SPLIT_QTY   = re.compile(rf"(?<!^)(?={NUM})")
-LEADING_QTY = re.compile(rf"^\s*{NUM}\s*(?:{'|'.join(map(re.escape, UNITS_LIST))})?\s*", re.I)
-PUNCT_TR    = str.maketrans({p: " " for p in string.punctuation if p != "-"})
-REMOVE_RE   = re.compile(r"\b(?:fresh|large|medium|small|whole|boneless|skinless|washed|peeled|pitted|chopped|diced|sliced|shredded|grated|minced|crushed|trimmed|cleaned|piece|pieces|slice|slices|pinch|dash|taste|optional|bite|head|bay|leaf)\b", re.I)
+# ─── load SVMs if present ───────────────────────────────────────────
+_base   = Path(__file__).resolve().parent
+_models = _base / 'nutrition-ml'
+try:
+    KETO_MODEL  = joblib.load(str(_models / 'keto_svm.joblib'))
+    VEGAN_MODEL = joblib.load(str(_models / 'vegan_svm.joblib'))
+except Exception:
+    KETO_MODEL = VEGAN_MODEL = None
 
-# ────────────────────────── preprocessing ────────────────────────────
+# ─── regex setup ────────────────────────────────────────────────────
+FRACTIONS = '¼½¾⅓⅔⅛⅜⅝⅞'
+NUM       = rf'\d+(?:[./]\d+)?|[{FRACTIONS}]'
+UNITS     = (
+    'cups?|cup|tbsp|tablespoons?|tbs|tsp|teaspoons?|'
+    'lbs?|pounds?|oz|ounces?|grams?|kg|kilograms?|ml|l|liters?|'
+    'pints?|pt|quarts?|qt|gal|gallons?|inch(?:es)?'
+)
+UNITS_RE  = re.compile(rf'\b(?:{UNITS})\b', re.I)
+PUNCT_TR  = str.maketrans({p:' ' for p in string.punctuation if p!='-'})
+REMOVE_RE = re.compile(
+    r'\b(?:fresh|large|medium|small|whole|boneless|skinless|'
+    r'washed|peeled|pitted|chopped|diced|sliced|shredded|'
+    r'grated|minced|crushed|trimmed|cleaned|piece|pieces|slice|'
+    r'slices|pinch|dash|taste|optional|bite|head|bay|leaf)\b',
+    re.I
+)
+
 def _fast_scrub(raw: str) -> str:
-    txt = re.sub(r"\([^)]*inch[^)]*\)", " ", raw, flags=re.I)
-    txt = unicodedata.normalize("NFKD", txt).encode("ascii","ignore").decode().lower()
-    txt = UNITS_RE.sub(" ", txt)
-    txt = re.sub(NUM, " ", txt)
-    txt = txt.translate(PUNCT_TR)
-    txt = REMOVE_RE.sub(" ", txt)
-    return re.sub(r"\s+"," ", txt).strip()
+    t = re.sub(r'\([^)]*inch[^)]*\)', ' ', raw, flags=re.I)
+    t = unicodedata.normalize('NFKD', t).encode('ascii','ignore').decode().lower()
+    t = UNITS_RE.sub(' ', t)
+    t = re.sub(NUM, ' ', t)
+    t = t.translate(PUNCT_TR)
+    t = REMOVE_RE.sub(' ', t)
+    return re.sub(r'\s+', ' ', t).strip()
 
-def _to_key_phrases(scrub: str) -> str:
+def _to_key_phrases(text: str) -> str:
     buff, out = [], []
-    for tok in NLP(scrub):
+    for tok in NLP(text):
         if tok.pos_ in KEEP_POS:
             buff.append(tok.lemma_.lower())
         else:
             if 0 < len(buff) <= 3:
-                out.append(" ".join(buff))
+                out.append(' '.join(buff))
             buff = []
     if 0 < len(buff) <= 3:
-        out.append(" ".join(buff))
-    return " ".join(out) if out else scrub
+        out.append(' '.join(buff))
+    return ' '.join(out) if out else text
 
+@lru_cache(maxsize=8192)
 def preprocess(raw: str) -> str:
+    """Clean + noun‐phrase extraction, cached for speed."""
     return _to_key_phrases(_fast_scrub(raw))
 
-# ────────────────── explode CSV / numpy cells ────────────────────────
-SINGLE_QUOTED = re.compile(r"'([^']+)'"")]
+# ─── mimic web’s to_list fallback ─────────────────────────────────
+SPLIT_QTY   = re.compile(rf'(?<!^)(?={NUM})')
+LEADING_QTY = re.compile(rf'^\s*{NUM}\s*(?:{UNITS})?\s*', re.I)
+SINGLE_QUOTED = re.compile(r"'([^']+)'")
+
 def to_list(cell) -> List[str]:
     if isinstance(cell, list):
         return cell
     if not isinstance(cell, str):
         return []
     txt = cell.strip()
-    if txt.startswith("[") and txt.endswith("]"):
+    if txt.startswith('[') and txt.endswith(']'):
         hits = SINGLE_QUOTED.findall(txt)
         if hits:
             return [h.strip() for h in hits]
-        if "," in txt:
+        if ',' in txt:
             try:
                 return [str(x).strip() for x in ast.literal_eval(txt)]
             except:
                 pass
-    pieces = SPLIT_QTY.sub("\n", txt)
-    parts  = [LEADING_QTY.sub("", p).strip()
-              for p in re.split(r"[\n,]+", pieces)]
+    pieces = SPLIT_QTY.sub('\n', txt)
+    parts  = [LEADING_QTY.sub('', p).strip() for p in re.split(r'[\n,]+', pieces)]
     return [p for p in parts if p]
 
-# ─────────────────── load pre‐trained SVMs ───────────────────────────
-def _load_models() -> Tuple[Any,Any]:
-    for root in (Path.cwd(),
-                 Path(__file__).resolve().parent,
-                 Path(__file__).resolve().parent.parent):
-        k = root/"nutrition-ml"/"keto_svm.joblib"
-        v = root/"nutrition-ml"/"vegan_svm.joblib"
-        if k.exists() and v.exists():
-            log.info("Loading pickles from %s", k.parent)
-            return joblib.load(k), joblib.load(v)
-    log.warning("‼ pickles missing – default to False")
-    return None, None
-
-KETO_MODEL, VEGAN_MODEL = _load_models()
-
-# ─────────────────── wrapper that uses our global maps ────────────────
+# ─── per‐ingredient tests ──────────────────────────────────────────
 def is_ingredient_keto(raw: str) -> bool:
-    return _KETO_MAP.get(raw, False)
+    norm = preprocess(raw)
+    if any(b in norm for b in KETO_BLOCK):
+        return False
+    if any(a in norm for a in KETO_ALLOW):
+        return True
+    if KETO_MODEL:
+        return bool(KETO_MODEL.predict([norm])[0])
+    return False
 
 def is_ingredient_vegan(raw: str) -> bool:
-    return _VEGAN_MAP.get(raw, False)
+    norm = preprocess(raw)
+    toks = norm.split()
+    if toks and toks[0] in PLANT_BASES:
+        return True
+    if any(b in toks for b in VEGAN_BLOCK):
+        return False
+    if VEGAN_MODEL:
+        return bool(VEGAN_MODEL.predict([norm])[0])
+    return False
 
 def is_keto(ings: List[str]) -> bool:
     return all(is_ingredient_keto(i) for i in ings)
@@ -129,32 +157,40 @@ def is_keto(ings: List[str]) -> bool:
 def is_vegan(ings: List[str]) -> bool:
     return all(is_ingredient_vegan(i) for i in ings)
 
-# ────────────────────────────── main ─────────────────────────────────
+# ─── CLI evaluation harness ────────────────────────────────────────
 def main(args):
-    ground_truth = pd.read_csv(args.ground_truth, index_col=None)
-    try:
-        start_time = time()
-        ground_truth['keto_pred'] = ground_truth['ingredients'].apply(is_keto)
-        ground_truth['vegan_pred'] = ground_truth['ingredients'].apply(
-            is_vegan)
+    df = pd.read_csv(args.ground_truth, index_col=None)
 
-        end_time = time()
-    except Exception as e:
-        print(f"Error: {e}")
-        return -1
+    # parse exactly as the web app does
+    df['_ings'] = df['ingredients'].apply(to_list)
 
-    print("===Keto===")
-    print(classification_report(
-        ground_truth['keto'], ground_truth['keto_pred']))
-    print("===Vegan===")
-    print(classification_report(
-        ground_truth['vegan'], ground_truth['vegan_pred']))
-    print(f"== Time taken: {end_time - start_time} seconds ==")
+    # ── Pre-warm our preprocess cache ───────────────────────────
+    unique_raws = {ing for cell in df['_ings'] for ing in cell}
+    for raw in unique_raws:
+        preprocess(raw)
+
+    # ── run classification with plain list comprehensions ────────
+    start = time()
+    keto_preds  = [is_keto(cell)  for cell in df['_ings']]
+    vegan_preds = [is_vegan(cell) for cell in df['_ings']]
+    end = time()
+
+    print('=== Keto ===')
+    print(classification_report(df['keto'], keto_preds))
+    print(confusion_matrix(df['keto'], keto_preds), '\n')
+
+    print('=== Vegan ===')
+    print(classification_report(df['vegan'], vegan_preds))
+    print(confusion_matrix(df['vegan'], vegan_preds), '\n')
+
+    print(f'== Time: {end-start:.2f}s ==')
     return 0
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--ground_truth", type=str,
-                        default="/usr/src/data/ground_truth_sample.csv")
+    parser.add_argument(
+        '--ground_truth',
+        default='/usr/src/data/ground_truth_sample.csv',
+        help="CSV with ['ingredients','keto','vegan']"
+    )
     sys.exit(main(parser.parse_args()))
