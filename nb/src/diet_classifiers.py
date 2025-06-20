@@ -14,9 +14,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 log = logging.getLogger("diet")
 log.setLevel(logging.INFO)
 log.addHandler(logging.StreamHandler(stream=sys.stderr))
-
-log.info("Loading spaCy …")
-NLP = spacy.load("en_core_web_sm", disable=["parser", "ner"])
+NLP = spacy.blank("en")
 KEEP_POS = {"NOUN", "PROPN"}
 
 # ─────────────────── vegan / keto globals ───────────────────────────
@@ -82,7 +80,7 @@ def preprocess(raw: str) -> str:
     return _to_key_phrases(_fast_scrub(raw))
 
 # ────────────────── explode CSV / numpy cells ────────────────────────
-SINGLE_QUOTED = re.compile(r"'([^']+)'")
+SINGLE_QUOTED = re.compile(r"'([^']+)'"")]
 def to_list(cell) -> List[str]:
     if isinstance(cell, list):
         return cell
@@ -132,78 +130,31 @@ def is_vegan(ings: List[str]) -> bool:
     return all(is_ingredient_vegan(i) for i in ings)
 
 # ────────────────────────────── main ─────────────────────────────────
-def _main():
-    import argparse
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--ground_truth",
-                    default="/usr/src/data/ground_truth_sample.csv")
-    args = ap.parse_args()
+def main(args):
+    ground_truth = pd.read_csv(args.ground_truth, index_col=None)
+    try:
+        start_time = time()
+        ground_truth['keto_pred'] = ground_truth['ingredients'].apply(is_keto)
+        ground_truth['vegan_pred'] = ground_truth['ingredients'].apply(
+            is_vegan)
 
-    df = pd.read_csv(args.ground_truth)
-    log.info("Evaluating on %s rows …", f"{len(df):,}")
+        end_time = time()
+    except Exception as e:
+        print(f"Error: {e}")
+        return -1
 
-    # explode into lists
-    df["_ings"] = df["ingredients"].apply(to_list)
+    print("===Keto===")
+    print(classification_report(
+        ground_truth['keto'], ground_truth['keto_pred']))
+    print("===Vegan===")
+    print(classification_report(
+        ground_truth['vegan'], ground_truth['vegan_pred']))
+    print(f"== Time taken: {end_time - start_time} seconds ==")
+    return 0
 
-    # unique raw strings → preprocessed
-    unique    = {ing for row in df["_ings"] for ing in row}
-    clean_map = {r: preprocess(r) for r in unique}
-
-    # build keto map
-    keto_map = {}
-    svm_list = []
-    for r, c in clean_map.items():
-        if any(tok in c for tok in KETO_ALLOW):
-            keto_map[r] = True
-        elif any(tok in c for tok in KETO_BLOCK):
-            keto_map[r] = False
-        else:
-            svm_list.append((r, c))
-    if KETO_MODEL and svm_list:
-        raws, cleans = zip(*svm_list)
-        preds = KETO_MODEL.predict(list(cleans))
-        for r, p in zip(raws, preds):
-            keto_map[r] = bool(p)
-    for r in unique:
-        keto_map.setdefault(r, False)
-
-    # build vegan map
-    vegan_map = {}
-    svm_list  = []
-    for r, c in clean_map.items():
-        toks = c.split()
-        if toks and toks[0] in PLANT_BASES:
-            vegan_map[r] = True
-        elif any(tok in toks for tok in VEGAN_BLOCK):
-            vegan_map[r] = False
-        else:
-            svm_list.append((r, c))
-    if VEGAN_MODEL and svm_list:
-        raws, cleans = zip(*svm_list)
-        preds = VEGAN_MODEL.predict(list(cleans))
-        for r, p in zip(raws, preds):
-            vegan_map[r] = bool(p)
-    for r in unique:
-        vegan_map.setdefault(r, False)
-
-    # plug into globals
-    globals()["_KETO_MAP"]  = keto_map
-    globals()["_VEGAN_MAP"] = vegan_map
-
-    # apply to recipes
-    t0 = time()
-    df["keto_pred"]  = df["_ings"].apply(is_keto)
-    df["vegan_pred"] = df["_ings"].apply(is_vegan)
-    log.info("Done in %.2fs", time() - t0)
-
-    # results
-    print("=== Keto ===")
-    print(classification_report(df["keto"],  df["keto_pred"]))
-    print(confusion_matrix(df["keto"],  df["keto_pred"]), "\n")
-
-    print("=== Vegan ===")
-    print(classification_report(df["vegan"], df["vegan_pred"]))
-    print(confusion_matrix(df["vegan"], df["vegan_pred"]))
 
 if __name__ == "__main__":
-    _main()
+    parser = ArgumentParser()
+    parser.add_argument("--ground_truth", type=str,
+                        default="/usr/src/data/ground_truth_sample.csv")
+    sys.exit(main(parser.parse_args()))

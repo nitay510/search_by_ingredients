@@ -17,6 +17,7 @@ RUN curl -L https://argmax.nyc3.digitaloceanspaces.com/recipes/allrecipes.parque
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m spacy download en_core_web_sm
 
 
 # Expose the port the app runs on
