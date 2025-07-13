@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import List, Dict
 from argparse import ArgumentParser
 from tqdm import tqdm
+from diet_classifiers import is_keto, is_vegan
 
 # Configure logging
 logging.getLogger('opensearch').setLevel(logging.ERROR)
@@ -106,7 +107,9 @@ def create_index(client: OpenSearch):
                     "description": {"type": "text"},
                     "ingredients": {"type": "text"},
                     "instructions": {"type": "text"},
-                    "photo_url": {"type": "keyword"}
+                    "photo_url": {"type": "keyword"},
+                    "is_keto":      {"type": "boolean"},
+                    "is_vegan":     {"type": "boolean"}
                 }
             }
         }
@@ -126,23 +129,21 @@ def create_index(client: OpenSearch):
 
 
 def batch_index_recipes(client: OpenSearch, recipes: List[Dict], batch_size: int = 10240):
-    """Index a batch of recipes into OpenSearch"""
     actions = []
     ingredients = set()
     for recipe in recipes:
+        recipe["is_keto"] = is_keto(recipe["ingredients"])
+        recipe["is_vegan"] = is_vegan(recipe["ingredients"])
+        
         actions.append({"index": {"_index": "recipes"}})
         actions.append(recipe)
-        ingredients |= {normalize_ingredient(
-            ing) for ing in recipe["ingredients"]}
+        ingredients |= {normalize_ingredient(ing) for ing in recipe["ingredients"]}
         if len(actions) >= batch_size * 2:
             client.bulk(body=actions)
-            # logger.info(f"Indexed {len(actions)//2} recipes")
             actions = []
 
-    # Index any remaining recipes
     if actions:
         client.bulk(body=actions)
-        # logger.info(f"Indexed {len(actions)//2} recipes")
 
     actions = []
     for ing in ingredients:

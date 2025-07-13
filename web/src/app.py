@@ -124,8 +124,8 @@ def search_by_ingredients():
             'ingredients': hit['_source']['ingredients'],
             'instructions': hit['_source'].get('instructions', ''),
             'photo_url': hit['_source'].get('photo_url', ''),
-            'keto': is_keto(hit['_source']['ingredients']),
-            'vegan': is_vegan(hit['_source']['ingredients']),
+            'keto':  hit['_source'].get('is_keto', False),
+            'vegan': hit['_source'].get('is_vegan', False),
             'score': hit['_score']
         } for hit in hits]
         return jsonify({
