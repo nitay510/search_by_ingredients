@@ -134,7 +134,7 @@ def batch_index_recipes(client: OpenSearch, recipes: List[Dict], batch_size: int
     for recipe in recipes:
         recipe["is_keto"] = is_keto(recipe["ingredients"])
         recipe["is_vegan"] = is_vegan(recipe["ingredients"])
-        
+
         actions.append({"index": {"_index": "recipes"}})
         actions.append(recipe)
         ingredients |= {normalize_ingredient(ing) for ing in recipe["ingredients"]}

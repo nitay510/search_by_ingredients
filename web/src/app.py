@@ -88,6 +88,7 @@ def select2():
 
 @app.route('/search', methods=['GET'])
 def search_by_ingredients():
+    diet = request.args.get('diet', '')
     ingredient = request.args.get('q', '')
     if not ingredient:
         return jsonify({'error': 'Please provide an ingredient name'}), 400
@@ -96,27 +97,37 @@ def search_by_ingredients():
     ingredient_ids = [ingredients[id_] for id_ in ingredient_ids]
     ingredient = " ".join(ingredient_ids)
 
-    # Create the search query
+    # diet filter
+    if diet == "keto":
+        diet_filter = [{"term": {"is_keto": True}}]
+    elif diet == "vegan":
+        diet_filter = [{"term": {"is_vegan": True}}]
+    elif diet == "both":
+        diet_filter = [
+            {"term": {"is_keto": True}},
+            {"term": {"is_vegan": True}}
+        ]
+    else:
+        diet_filter = []
+
     query = {
         "query": {
-            "match": {
-                "ingredients": {
-                    "query": ingredient,
-                    "fuzziness": "AUTO"
-                }
+            "bool": {
+                "must": {
+                    "match": {
+                        "ingredients": {
+                            "query": ingredient,
+                            "fuzziness": "AUTO"
+                        }
+                    }
+                },
+                "filter": diet_filter
             }
         }
     }
 
     try:
-        # Execute the search
-        response = client.search(
-            index="recipes",
-            body=query,
-            size=12
-        )
-
-        # Format the results
+        response = client.search(index="recipes", body=query, size=12)
         hits = response['hits']['hits']
         results = [{
             'title': hit['_source']['title'],
@@ -124,7 +135,7 @@ def search_by_ingredients():
             'ingredients': hit['_source']['ingredients'],
             'instructions': hit['_source'].get('instructions', ''),
             'photo_url': hit['_source'].get('photo_url', ''),
-            'keto':  hit['_source'].get('is_keto', False),
+            'keto': hit['_source'].get('is_keto', False),
             'vegan': hit['_source'].get('is_vegan', False),
             'score': hit['_score']
         } for hit in hits]
@@ -132,9 +143,9 @@ def search_by_ingredients():
             'total': response['hits']['total']['value'],
             'results': results
         })
-
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 
 if __name__ == '__main__':
